@@ -30,8 +30,24 @@ class TeacherLoginRequest(BaseModel):
 
 def load_teacher_credentials() -> dict[str, str]:
     teachers_file = current_dir / "teachers.json"
-    with open(teachers_file, "r", encoding="utf-8") as file:
-        payload = json.load(file)
+    try:
+        with open(teachers_file, "r", encoding="utf-8") as file:
+            payload = json.load(file)
+    except FileNotFoundError as exc:
+        raise RuntimeError(
+            f"Startup configuration error: required teacher credentials file "
+            f"'{teachers_file}' was not found."
+        ) from exc
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"Startup configuration error: teacher credentials file "
+            f"'{teachers_file}' contains invalid JSON: {exc}"
+        ) from exc
+    except OSError as exc:
+        raise RuntimeError(
+            f"Startup configuration error: could not read teacher credentials "
+            f"file '{teachers_file}': {exc}"
+        ) from exc
 
     teachers: dict[str, str] = {}
     for teacher in payload.get("teachers", []):
